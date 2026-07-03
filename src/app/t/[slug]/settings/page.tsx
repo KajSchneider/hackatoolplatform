@@ -6,12 +6,13 @@ import { hasRole } from "@/lib/rbac";
 export default async function TeamSettingsPage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
+  const { slug } = await params;
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  const team = await prisma.team.findUnique({ where: { slug: params.slug } });
+  const team = await prisma.team.findUnique({ where: { slug } });
   if (!team) redirect("/");
 
   const isAdmin = await hasRole(session.user.id, team.id, "admin");
@@ -57,7 +58,7 @@ export default async function TeamSettingsPage({
                         where: { id: membership.id },
                         data: { role: newRole },
                       });
-                      redirect(`/t/${params.slug}/settings`);
+                      redirect(`/t/${slug}/settings`);
                     }}
                     className="flex gap-1"
                   >

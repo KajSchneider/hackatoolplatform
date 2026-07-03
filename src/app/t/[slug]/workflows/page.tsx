@@ -4,9 +4,10 @@ import { redirect } from "next/navigation";
 export default async function WorkflowsPage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
-  const team = await prisma.team.findUnique({ where: { slug: params.slug } });
+  const { slug } = await params;
+  const team = await prisma.team.findUnique({ where: { slug } });
   if (!team) redirect("/");
 
   const workflows = await prisma.workflow.findMany({
@@ -28,7 +29,7 @@ export default async function WorkflowsPage({
             await prisma.workflow.create({
               data: { name, description, teamId: team.id },
             });
-            redirect(`/t/${params.slug}/workflows`);
+            redirect(`/t/${slug}/workflows`);
           }}
           className="flex gap-2"
         >
@@ -67,13 +68,13 @@ export default async function WorkflowsPage({
             </div>
             <div className="mt-4 flex gap-2">
               <a
-                href={`/t/${params.slug}/workflows/${workflow.id}`}
+                href={`/t/${slug}/workflows/${workflow.id}`}
                 className="rounded bg-gray-100 px-3 py-1 text-sm hover:bg-gray-200"
               >
                 Edit
               </a>
               <a
-                href={`/t/${params.slug}/workflows/${workflow.id}/runs`}
+                href={`/t/${slug}/workflows/${workflow.id}/runs`}
                 className="rounded bg-gray-100 px-3 py-1 text-sm hover:bg-gray-200"
               >
                 Runs

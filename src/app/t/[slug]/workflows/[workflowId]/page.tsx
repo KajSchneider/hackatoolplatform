@@ -5,16 +5,17 @@ import WorkflowBuilder from "@/components/WorkflowBuilder";
 export default async function WorkflowEditPage({
   params,
 }: {
-  params: { slug: string; workflowId: string };
+  params: Promise<{ slug: string; workflowId: string }>;
 }) {
-  const team = await prisma.team.findUnique({ where: { slug: params.slug } });
+  const { slug, workflowId } = await params;
+  const team = await prisma.team.findUnique({ where: { slug } });
   if (!team) redirect("/");
 
   const workflow = await prisma.workflow.findUnique({
-    where: { id: params.workflowId, teamId: team.id },
+    where: { id: workflowId, teamId: team.id },
     include: { steps: { orderBy: { order: "asc" } } },
   });
-  if (!workflow) redirect(`/t/${params.slug}/workflows`);
+  if (!workflow) redirect(`/t/${slug}/workflows`);
 
   return (
     <div className="p-6">
@@ -26,7 +27,7 @@ export default async function WorkflowEditPage({
           )}
         </div>
         <a
-          href={`/t/${params.slug}/workflows`}
+          href={`/t/${slug}/workflows`}
           className="text-sm text-blue-500 hover:text-blue-700"
         >
           ← Back to workflows
@@ -34,7 +35,7 @@ export default async function WorkflowEditPage({
       </div>
       <WorkflowBuilder
         workflowId={workflow.id}
-        teamSlug={params.slug}
+        teamSlug={slug}
         initialSteps={workflow.steps.map((s: any) => ({
           ...s,
           config: JSON.parse(s.config),

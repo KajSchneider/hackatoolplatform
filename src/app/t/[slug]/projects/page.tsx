@@ -4,9 +4,10 @@ import { redirect } from "next/navigation";
 export default async function ProjectsPage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
-  const team = await prisma.team.findUnique({ where: { slug: params.slug } });
+  const { slug } = await params;
+  const team = await prisma.team.findUnique({ where: { slug } });
   if (!team) redirect("/");
 
   const projects = await prisma.project.findMany({
@@ -23,16 +24,16 @@ export default async function ProjectsPage({
             "use server";
             const name = formData.get("name") as string;
             const description = formData.get("description") as string;
-            const slug = name
+            const projectSlug = name
               .toLowerCase()
               .replace(/[^a-z0-9]+/g, "-")
               .replace(/^-|-$/g, "")
               .slice(0, 40);
 
             await prisma.project.create({
-              data: { name, slug, description, teamId: team.id },
+              data: { name, slug: projectSlug, description, teamId: team.id },
             });
-            redirect(`/t/${params.slug}/projects`);
+            redirect(`/t/${slug}/projects`);
           }}
           className="flex gap-2"
         >
@@ -71,7 +72,7 @@ export default async function ProjectsPage({
                 {project.status === "published" ? "🚀 Live" : "📝 Draft"}
               </span>
               <a
-                href={`/t/${params.slug}/projects/${project.id}`}
+                href={`/t/${slug}/projects/${project.id}`}
                 className="rounded bg-gray-100 px-3 py-1 text-sm hover:bg-gray-200"
               >
                 Open IDE

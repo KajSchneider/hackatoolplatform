@@ -4,15 +4,16 @@ import { redirect } from "next/navigation";
 export default async function WorkflowRunsPage({
   params,
 }: {
-  params: { slug: string; workflowId: string };
+  params: Promise<{ slug: string; workflowId: string }>;
 }) {
-  const team = await prisma.team.findUnique({ where: { slug: params.slug } });
+  const { slug, workflowId } = await params;
+  const team = await prisma.team.findUnique({ where: { slug } });
   if (!team) redirect("/");
 
   const workflow = await prisma.workflow.findUnique({
-    where: { id: params.workflowId, teamId: team.id },
+    where: { id: workflowId, teamId: team.id },
   });
-  if (!workflow) redirect(`/t/${params.slug}/workflows`);
+  if (!workflow) redirect(`/t/${slug}/workflows`);
 
   const runs = await prisma.workflowRun.findMany({
     where: { workflowId: workflow.id },
@@ -25,7 +26,7 @@ export default async function WorkflowRunsPage({
         <div>
           <h1 className="text-2xl font-bold">{workflow.name} - Runs</h1>
           <a
-            href={`/t/${params.slug}/workflows/${workflow.id}`}
+            href={`/t/${slug}/workflows/${workflow.id}`}
             className="text-sm text-blue-500 hover:text-blue-700"
           >
             ← Back to workflow
