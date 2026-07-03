@@ -1,0 +1,14 @@
+node_modules/
+.next/
+out/
+build/
+.env
+.env.local
+.env.*.local
+*.db
+*.db-journal
+uploads/
+.DS_Store
+npm-debug.log*
+next-env.d.ts
+brand guide/

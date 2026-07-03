@@ -1,0 +1,361 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  name          String?
+  passwordHash  String?
+  role          String         @default("user") // admin | user
+  createdAt     DateTime       @default(now())
+  memberships   Membership[]
+  groupMemberships GroupMembership[]
+  conversations Conversation[]
+  netlifyAccount NetlifyAccount?
+  deployments   Deployment[]
+}
+
+model Team {
+  id            String         @id @default(cuid())
+  name          String
+  slug          String         @unique
+  credits       Int            @default(100)
+  startDate     DateTime?      // hackathon start date
+  endDate       DateTime?      // hackathon end date
+  createdAt     DateTime       @default(now())
+  memberships   Membership[]
+  groups        Group[]
+  apiKeys       ApiKey[]
+  conversations Conversation[]
+  tokens        PlatformToken[]
+  usageLogs     UsageLog[]
+  files         StoredFile[]
+  chatbots      Chatbot[]
+  workflows     Workflow[]
+  auditLogs     AuditLog[]
+  invitations   TeamInvitation[]
+  customEndpoints CustomEndpoint[]
+  mcpServers     McpServer[]
+}
+
+model Membership {
+  id        String   @id @default(cuid())
+  role      String   @default("member") // owner | admin | member
+  userId    String
+  teamId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, teamId])
+}
+
+model Group {
+  id          String           @id @default(cuid())
+  name        String
+  slug        String
+  teamId      String
+  createdAt   DateTime         @default(now())
+  team        Team             @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  memberships GroupMembership[]
+  projects    Project[]
+
+  @@unique([teamId, slug])
+}
+
+model GroupMembership {
+  id        String   @id @default(cuid())
+  role      String   @default("member") // owner | admin | member
+  userId    String
+  groupId   String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, groupId])
+}
+
+model TeamInvitation {
+  id        String   @id @default(cuid())
+  email     String
+  teamId    String
+  role      String   @default("member") // admin | member
+  token     String   @unique
+  accepted  Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([email, teamId])
+}
+
+model ApiKey {
+  id           String   @id @default(cuid())
+  provider     String // openai | anthropic
+  label        String?
+  encryptedKey String
+  teamId       String
+  createdAt    DateTime   @default(now())
+  team         Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, provider])
+}
+
+model Conversation {
+  id          String     @id @default(cuid())
+  title       String     @default("Nieuw gesprek")
+  model       String
+  teamId      String
+  userId      String
+  chatbotId   String?
+  shared      Boolean    @default(false) // shared with team
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  team        Team       @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages    Message[]
+}
+
+model PlatformToken {
+  id          String     @id @default(cuid())
+  name        String
+  prefix      String // first chars shown to user, e.g. hk_abc1
+  tokenHash   String     @unique // sha256 of full token
+  teamId      String
+  createdAt   DateTime   @default(now())
+  lastUsedAt  DateTime?
+  team        Team       @relation(fields: [teamId], references: [id], onDelete: Cascade)
+}
+
+model UsageLog {
+  id               String     @id @default(cuid())
+  teamId           String
+  source           String // chat | api
+  model            String
+  promptTokens     Int        @default(0)
+  completionTokens Int        @default(0)
+  createdAt        DateTime   @default(now())
+  team             Team       @relation(fields: [teamId], references: [id], onDelete: Cascade)
+}
+
+model StoredFile {
+  id          String     @id @default(cuid())
+  name        String
+  size        Int
+  mimeType    String
+  path        String // relative storage path
+  teamId      String
+  userId      String
+  createdAt   DateTime   @default(now())
+  team        Team       @relation(fields: [teamId], references: [id], onDelete: Cascade)
+}
+
+model Chatbot {
+  id            String         @id @default(cuid())
+  name          String
+  description   String?
+  systemPrompt  String
+  model         String
+  shared        Boolean        @default(false) // shared with team
+  teamId        String
+  createdAt     DateTime       @default(now())
+  team          Team           @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  workflowSteps WorkflowStep[]
+}
+
+model Project {
+  id                String             @id @default(cuid())
+  name              String
+  slug              String
+  description       String?
+  status            String             @default("draft") // draft | published
+  runtimeUrl        String? // preview URL when published
+  shared            Boolean            @default(false) // shared with team
+  groupId           String
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  group             Group              @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  files             ProjectFile[]
+  folders           Folder[]
+  gitHubConnections GitHubConnection[]
+  deployments       Deployment[]
+  agentMessages     AgentMessage[]
+
+  @@unique([groupId, slug])
+}
+
+model ProjectFile {
+  id        String   @id @default(cuid())
+  path      String // relative path in project
+  content   String // file content (text-based)
+  projectId String
+  folderId  String? // optional folder for organization
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  folder    Folder?  @relation(fields: [folderId], references: [id], onDelete: SetNull)
+
+  @@unique([projectId, path])
+}
+
+model Folder {
+  id        String        @id @default(cuid())
+  name      String // folder name
+  projectId String
+  parentId  String? // for nested folders
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  project   Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  parent    Folder?       @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children  Folder[]      @relation("FolderHierarchy")
+  files     ProjectFile[]
+
+  @@unique([projectId, name, parentId])
+}
+
+model AgentMessage {
+  id        String   @id @default(cuid())
+  projectId String
+  role      String   // user | assistant
+  content   String
+  createdAt DateTime @default(now())
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, createdAt])
+}
+
+model GitHubConnection {
+  id           String    @id @default(cuid())
+  owner        String // GitHub username/org
+  repo         String // repository name
+  branch       String    @default("main")
+  accessToken  String // encrypted GitHub PAT
+  lastSyncedAt DateTime?
+  projectId    String
+  createdAt    DateTime  @default(now())
+  project      Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, owner, repo])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  role           String // user | assistant
+  content        String
+  conversationId String
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+}
+
+model Workflow {
+  id          String         @id @default(cuid())
+  name        String
+  description String?
+  schedule    String? // cron expression for scheduling
+  shared      Boolean        @default(false) // shared with team
+  teamId      String
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  team        Team           @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  steps       WorkflowStep[]
+  runs        WorkflowRun[]
+}
+
+model WorkflowStep {
+  id         String   @id @default(cuid())
+  order      Int // execution order
+  type       String // prompt | agent | tool
+  config     String // JSON config for the step (prompt, model, etc.)
+  workflowId String
+  chatbotId  String? // optional persona for this step
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  workflow   Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  chatbot    Chatbot? @relation(fields: [chatbotId], references: [id], onDelete: SetNull)
+}
+
+model WorkflowRun {
+  id          String    @id @default(cuid())
+  status      String    @default("pending") // pending | running | completed | failed
+  input       String? // JSON input
+  output      String? // JSON output
+  error       String?
+  startedAt   DateTime?
+  completedAt DateTime?
+  workflowId  String
+  createdAt   DateTime  @default(now())
+  workflow    Workflow  @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id          String     @id @default(cuid())
+  action      String // create, update, delete, run, etc.
+  resource    String // team, project, workflow, etc.
+  resourceId  String?
+  userId      String
+  teamId      String
+  metadata    String? // JSON with additional context
+  createdAt   DateTime   @default(now())
+  team        Team       @relation(fields: [teamId], references: [id], onDelete: Cascade)
+}
+
+model CustomEndpoint {
+  id          String     @id @default(cuid())
+  name        String
+  provider    String // openai, anthropic, or custom
+  baseUrl     String // custom API base URL
+  apiKey      String // encrypted API key for the custom endpoint
+  models      String     @default("[]") // JSON array of available model names
+  teamId      String
+  createdAt   DateTime   @default(now())
+  team        Team       @relation(fields: [teamId], references: [id], onDelete: Cascade)
+}
+
+model NetlifyAccount {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  accessToken String   // encrypted Netlify access token
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Deployment {
+  id          String   @id @default(cuid())
+  projectId   String
+  createdById String
+  provider    String   @default("netlify")
+  status      String   @default("pending") // pending, deploying, deployed, failed
+  url         String?  // public URL
+  siteId      String?  // Netlify site ID for this project deployment
+  deployId    String?  // Netlify deployment ID
+  commitSha   String?  // Git commit SHA for GitHub-based deploys
+  publicApiKey String? @unique // optional public API key hash for this deployment
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy   User     @relation(fields: [createdById], references: [id], onDelete: Cascade)
+}
+
+model McpServer {
+  id            String   @id @default(cuid())
+  teamId        String
+  name          String
+  transportType String   // "sse" | "stdio"
+  url           String?  // for SSE transport
+  command       String?  // for stdio transport
+  args          String?  // JSON array of args, for stdio
+  env           String?  // JSON object of env vars, for stdio
+  headers       String?  // JSON object of headers, for SSE
+  enabled       Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  team          Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+}

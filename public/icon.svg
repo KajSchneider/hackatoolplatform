@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-label="Hackatool icon">
+  
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M82 66 H58 Q45 66 45 79 V177 Q45 190 58 190 H82" stroke="#10B981" stroke-width="18"/>
+    <path d="M174 66 H198 Q211 66 211 79 V177 Q211 190 198 190 H174" stroke="#FFFFFF" stroke-width="18"/>
+    <path d="M115 96 L82 128 L115 160" stroke="#FFFFFF" stroke-width="18"/>
+    <path d="M141 96 L174 128 L141 160" stroke="#FFFFFF" stroke-width="18"/>
+  </g>
+</svg>
