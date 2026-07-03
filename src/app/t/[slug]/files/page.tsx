@@ -35,7 +35,7 @@ export default async function FilesPage({ params }: { params: Promise<{ slug: st
             name: f.name,
             size: f.size,
             mimeType: f.mimeType,
-            createdAt: f.createdAt.toISOString(),
+            createdAt: f.createdAt,
           }))}
         />
       </div>

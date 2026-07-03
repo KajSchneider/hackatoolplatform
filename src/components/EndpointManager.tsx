@@ -9,7 +9,7 @@ interface Endpoint {
   baseUrl: string;
   apiKey: string | null;
   models: string[];
-  createdAt: string;
+  createdAt: Date;
 }
 
 interface EndpointManagerProps {

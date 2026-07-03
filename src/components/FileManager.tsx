@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { File as FileIcon, Trash2, Download, Upload } from "lucide-react";
 
-type FileItem = { id: string; name: string; size: number; mimeType: string; createdAt: string };
+type FileItem = { id: string; name: string; size: number; mimeType: string; createdAt: Date };
 
 function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;

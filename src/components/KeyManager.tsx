@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { KeyRound, Trash2, Plus } from "lucide-react";
 
-type KeyItem = { id: string; provider: string; label: string | null; createdAt: string };
+type KeyItem = { id: string; provider: string; label: string | null; createdAt: Date };
 
 export default function KeyManager({ teamSlug, keys }: { teamSlug: string; keys: KeyItem[] }) {
   const router = useRouter();

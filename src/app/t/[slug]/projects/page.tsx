@@ -11,50 +11,15 @@ export default async function ProjectsPage({
   if (!team) redirect("/");
 
   const projects = await prisma.project.findMany({
-    where: { teamId: team.id },
+    where: { group: { teamId: team.id } },
     orderBy: { updatedAt: "desc" },
   });
 
   return (
     <div className="p-6">
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6">
         <h1 className="text-2xl font-bold">Projects</h1>
-        <form
-          action={async (formData) => {
-            "use server";
-            const name = formData.get("name") as string;
-            const description = formData.get("description") as string;
-            const projectSlug = name
-              .toLowerCase()
-              .replace(/[^a-z0-9]+/g, "-")
-              .replace(/^-|-$/g, "")
-              .slice(0, 40);
-
-            await prisma.project.create({
-              data: { name, slug: projectSlug, description, teamId: team.id },
-            });
-            redirect(`/t/${slug}/projects`);
-          }}
-          className="flex gap-2"
-        >
-          <input
-            name="name"
-            placeholder="Project name"
-            required
-            className="rounded border px-3 py-2"
-          />
-          <input
-            name="description"
-            placeholder="Description (optional)"
-            className="rounded border px-3 py-2"
-          />
-          <button
-            type="submit"
-            className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-accent-500"
-          >
-            Create
-          </button>
-        </form>
+        <p className="mt-1 text-sm text-gray-500">Maak projecten aan binnen een groep.</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

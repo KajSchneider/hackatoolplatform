@@ -38,7 +38,7 @@ export default async function EndpointsPage({ params }: { params: Promise<{ slug
             baseUrl: e.baseUrl,
             apiKey: e.apiKey ? `***${e.apiKey.slice(-4)}` : null,
             models: e.models ? JSON.parse(e.models) : [],
-            createdAt: e.createdAt.toISOString(),
+            createdAt: e.createdAt,
           }))}
         />
       </div>

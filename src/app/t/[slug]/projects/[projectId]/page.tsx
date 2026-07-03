@@ -14,9 +14,9 @@ export default async function IDEPage({
   if (!team) redirect("/");
 
   const [project, customEndpoints] = await Promise.all([
-    prisma.project.findUnique({
-      where: { id: projectId, teamId: team.id },
-      include: { gitHubConnections: true },
+    prisma.project.findFirst({
+      where: { id: projectId, group: { teamId: team.id } },
+      include: { gitHubConnections: true, group: { select: { slug: true } } },
     }),
     prisma.customEndpoint.findMany({
       where: { teamId: team.id },
@@ -38,6 +38,7 @@ export default async function IDEPage({
       <ProjectHeader
         project={project}
         teamSlug={slug}
+        groupSlug={project.group.slug}
         connections={project.gitHubConnections}
       />
       <IDE projectId={project.id} teamSlug={slug} customModels={customModels} />

@@ -13,7 +13,7 @@ interface McpServerConfig {
   env: string | null;
   headers: string | null;
   enabled: boolean;
-  createdAt: string;
+  createdAt: Date;
 }
 
 interface McpServerManagerProps {

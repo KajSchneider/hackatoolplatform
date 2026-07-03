@@ -8,8 +8,8 @@ type TokenItem = {
   id: string;
   name: string;
   prefix: string;
-  createdAt: string;
-  lastUsedAt: string | null;
+  createdAt: Date;
+  lastUsedAt: Date | null;
 };
 
 export default function TokenManager({

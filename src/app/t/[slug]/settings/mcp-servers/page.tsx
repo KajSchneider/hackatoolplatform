@@ -41,7 +41,7 @@ export default async function McpServersPage({ params }: { params: Promise<{ slu
             env: s.env,
             headers: s.headers,
             enabled: s.enabled,
-            createdAt: s.createdAt.toISOString(),
+            createdAt: s.createdAt,
           }))}
         />
       </div>

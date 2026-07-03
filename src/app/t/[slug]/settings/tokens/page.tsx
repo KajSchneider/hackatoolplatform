@@ -35,8 +35,8 @@ export default async function TokensPage({ params }: { params: Promise<{ slug: s
             id: t.id,
             name: t.name,
             prefix: t.prefix,
-            createdAt: t.createdAt.toISOString(),
-            lastUsedAt: t.lastUsedAt?.toISOString() ?? null,
+            createdAt: t.createdAt,
+            lastUsedAt: t.lastUsedAt,
           }))}
         />
       </div>

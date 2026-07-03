@@ -30,7 +30,7 @@ export default async function ConversationPage({
     prisma.conversation.findMany({
       where: { teamId: team.id },
       orderBy: { updatedAt: "desc" },
-      select: { id: true, title: true },
+      select: { id: true, title: true, shared: true, userId: true },
     }),
     prisma.chatbot.findMany({
       where: { teamId: team.id },

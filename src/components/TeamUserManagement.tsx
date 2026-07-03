@@ -7,7 +7,7 @@ import { Plus, Trash2, Crown, Shield, User, Mail } from "lucide-react";
 interface Member {
   id: string;
   role: string;
-  createdAt: string;
+  createdAt: Date;
   user: {
     id: string;
     email: string;

@@ -36,7 +36,7 @@ export default async function KeysPage({ params }: { params: Promise<{ slug: str
             id: k.id,
             provider: k.provider,
             label: k.label,
-            createdAt: k.createdAt.toISOString(),
+            createdAt: k.createdAt,
           }))}
         />
       </div>
