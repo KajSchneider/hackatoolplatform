@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { requireMembership } from "@/lib/teams";
 import { encrypt } from "@/lib/crypto";
@@ -12,15 +11,13 @@ const schema = z.object({
 });
 
 export async function POST(req: Request, { params }: { params: Promise<{ slug: string }> }) {
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 });
-  }
   const { slug } = await params;
-  const ctx = await requireMembership(session.user.id, slug);
-  if (!ctx) {
-    return NextResponse.json({ error: "Geen toegang" }, { status: 403 });
-  }
+  const team = await prisma.team.findUnique({ where: { slug } });
+  if (!team) return NextResponse.json({ error: "Team niet gevonden" }, { status: 404 });
+
+  const session = await requireMembership(team.id);
+  if (session instanceof Response) return session;
+
   const body = await req.json().catch(() => null);
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
@@ -29,8 +26,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
   const { provider, key, label } = parsed.data;
   const encryptedKey = encrypt(key);
   await prisma.apiKey.upsert({
-    where: { teamId_provider: { teamId: ctx.team.id, provider } },
-    create: { teamId: ctx.team.id, provider, encryptedKey, label },
+    where: { teamId_provider: { teamId: team.id, provider } },
+    create: { teamId: team.id, provider, encryptedKey, label },
     update: { encryptedKey, label },
   });
   return NextResponse.json({ ok: true }, { status: 201 });
