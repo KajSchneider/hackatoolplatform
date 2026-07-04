@@ -25,8 +25,6 @@ export default function EndpointManager({ teamSlug, endpoints }: EndpointManager
   const [baseUrl, setBaseUrl] = useState("");
   const [apiKey, setApiKey] = useState("");
   const [models, setModels] = useState("");
-  const [isConnectingBazaar, setIsConnectingBazaar] = useState(false);
-  const [bazaarError, setBazaarError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,28 +74,6 @@ export default function EndpointManager({ teamSlug, endpoints }: EndpointManager
     }
   };
 
-  const handleConnectBazaar = async () => {
-    setIsConnectingBazaar(true);
-    setBazaarError(null);
-    try {
-      const res = await fetch(`/api/teams/${teamSlug}/endpoints/bazaarlink`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
-      if (res.ok) {
-        window.location.reload();
-      } else {
-        const data = await res.json().catch(() => ({}));
-        setBazaarError(data.error || "Verbinding mislukt");
-      }
-    } catch {
-      setBazaarError("Kon niet verbinden met Bazaarlink");
-    } finally {
-      setIsConnectingBazaar(false);
-    }
-  };
-
   return (
     <div className="space-y-4">
       {!showForm ? (
@@ -108,16 +84,6 @@ export default function EndpointManager({ teamSlug, endpoints }: EndpointManager
           >
             Add Custom Endpoint
           </button>
-          <button
-            onClick={handleConnectBazaar}
-            disabled={isConnectingBazaar}
-            className="rounded bg-gradient-to-r from-purple-600 to-blue-600 px-4 py-2 text-white hover:from-purple-700 hover:to-blue-700 disabled:opacity-50"
-          >
-            {isConnectingBazaar ? "Verbinden..." : "Connect Bazaarlink"}
-          </button>
-          {bazaarError && (
-            <span className="self-center text-sm text-red-500">{bazaarError}</span>
-          )}
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-3 rounded border bg-white p-4 shadow-sm dark:bg-brand-600">

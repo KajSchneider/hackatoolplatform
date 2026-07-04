@@ -46,7 +46,7 @@ src/
         projects/[id]/     # IDE met Monaco editor, AI agent, preview
         workflows/          # workflows overzicht + aanmaken
         workflows/[id]/     # workflow details + runs
-      settings/endpoints/  # custom endpoints CRUD (incl. Bazaarlink integratie)
+      settings/endpoints/  # custom endpoints CRUD
     api/
       auth/[...nextauth]/  # NextAuth handlers
       register/            # account aanmaken
