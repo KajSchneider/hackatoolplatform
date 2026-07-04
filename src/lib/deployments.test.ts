@@ -3,7 +3,6 @@ import {
   MAX_DEPLOYMENTS_PER_USER,
   isValidDeploymentStatus,
   generateDeployKey,
-  pickNetlifyUrl,
 } from "./deployments";
 import { hashToken } from "./tokens";
 
@@ -44,20 +43,4 @@ describe("deployments", () => {
     });
   });
 
-  describe("pickNetlifyUrl", () => {
-    it("prefers ssl_url", () => {
-      expect(
-        pickNetlifyUrl({ ssl_url: "https://a", url: "http://b", deploy_url: "http://c" })
-      ).toBe("https://a");
-    });
-
-    it("falls back to url, then deploy_url", () => {
-      expect(pickNetlifyUrl({ url: "http://b", deploy_url: "http://c" })).toBe("http://b");
-      expect(pickNetlifyUrl({ deploy_url: "http://c" })).toBe("http://c");
-    });
-
-    it("returns null when nothing available", () => {
-      expect(pickNetlifyUrl({})).toBeNull();
-    });
-  });
 });

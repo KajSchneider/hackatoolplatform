@@ -3,6 +3,8 @@
 Multi-tenant AI-platform: hackathons, teams, AI-chat, IDE, workflows en REST API.
 Gebouwd met Next.js 15, TypeScript, Prisma en de Vercel AI SDK.
 
+**Productie:** Vercel (serverless) + Supabase (Postgres). Lokaal: SQLite of Supabase.
+
 **Data structuur:** Hackathon → Group → User (drie-niveau hiërarchie)
 
 Zie [ARCHITECTURE.md](./ARCHITECTURE.md) voor het technisch ontwerp.
@@ -45,9 +47,9 @@ Zie [ARCHITECTURE.md](./ARCHITECTURE.md) voor het technisch ontwerp.
 - **Audit logging:** action tracking per user/hackathon (create, update, delete, run, etc.)
 - **RBAC:** admin role voor platform beheer
 
-### Fase 7 — Project deployment (Netlify)
-- **Netlify koppeling:** gebruikers koppelen hun eigen Netlify account via OAuth (`/settings/netlify`)
-- **Deploy vanuit de IDE:** één klik deploy van projectbestanden naar Netlify (public URL)
+### Fase 7 — Project deployment (GitHub Pages)
+- **GitHub koppeling:** gebruikers koppelen een GitHub repo via PAT (owner, repo, branch)
+- **Deploy vanuit de IDE:** één klik deploy van projectbestanden naar GitHub + GitHub Pages (public URL)
 - **Deployment history:** overzicht per project met status (pending/deployed/failed) en delete
 - **Limiet:** max 25 deployments per gebruiker
 - **Public API key (optioneel):** per deployment een `hk_deploy_*` key aanmaken voor de public API
@@ -70,7 +72,6 @@ npm run dev       # http://localhost:3000
 | `ENCRYPTION_KEY` | 64 hex chars (32 bytes) voor AES-256 key-encryptie |
 | `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` | Platform-keys voor credit-gebruik (optioneel) |
 | `AUTH_GITHUB_ID` / `AUTH_GITHUB_SECRET` | GitHub OAuth (optioneel) |
-| `NETLIFY_CLIENT_ID` / `NETLIFY_CLIENT_SECRET` | Netlify OAuth app voor project deployments (optioneel) |
 
 > Voor productie: vervang de dev-secrets in `.env`, en wijzig de Prisma datasource
 > provider naar `postgresql`.
@@ -109,7 +110,7 @@ Voeg `"stream": true` toe voor een streaming response.
 - ~~**Fase 4**: AI agent pipelines (workflows)~~ ✅
 - ~~**Fase 5**: Admin & management, audit logging, RBAC~~ ✅
 - ~~**Fase 6**: Data structuur refactor (Hackathon → Group → User)~~ ✅
-- ~~**Fase 7**: Project deployment naar Netlify + public deploy API~~ ✅
-- ~~**Fase 7.1**: Deployment hardening (OAuth state CSRF-fix, oude routes opgeruimd, tests)~~ ✅
+- ~~**Fase 7**: Project deployment naar GitHub Pages + public deploy API~~ ✅
+- ~~**Fase 7.1**: Deployment hardening (oude routes opgeruimd, tests)~~ ✅
 - ~~**Fase 7.2**: Top-down rol-model (alleen admins maken hackathons aan met beheerder)~~ ✅
 - **Toekomst**: Stripe billing, productie-hardening

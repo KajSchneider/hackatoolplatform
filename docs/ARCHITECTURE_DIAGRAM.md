@@ -27,13 +27,8 @@ graph TB
         Custom["Custom Endpoints<br/>(bijv. eigen LLM)"]
     end
 
-    subgraph Netlify["Netlify"]
-        NetlifyAPI["Netlify Deploy API"]
-        NetlifySites["Gepubliceerde<br/>Project Sites"]
-    end
-
     subgraph GitHub["GitHub"]
-        GitHubRepos["Project Repos<br/>(PAT integratie)"]
+        GitHubRepos["Project Repos<br/>(PAT integratie)<br/>+ GitHub Pages"]
     end
 
     Client <--> NextApp
@@ -45,8 +40,6 @@ graph TB
     AISDK --> OpenAI
     AISDK --> Anthropic
     AISDK --> Custom
-    ServerActions --> NetlifyAPI
-    NetlifyAPI --> NetlifySites
     ServerActions --> GitHubRepos
 ```
 
@@ -58,7 +51,6 @@ erDiagram
     User ||--o{ GroupMembership : "heeft"
     User ||--o{ Conversation : "start"
     User ||--o{ Deployment : "creëert"
-    User ||--o| NetlifyAccount : "heeft"
 
     Team ||--o{ Membership : "bevat"
     Team ||--o{ Group : "bevat"
@@ -151,15 +143,9 @@ erDiagram
         string projectId FK
         string createdById FK
         string status "pending | deployed | failed"
-        string url
-        string siteId
+        string url "GitHub Pages URL"
+        string commitSha "Git commit SHA"
         string publicApiKey "SHA-256 hash"
-    }
-
-    NetlifyAccount {
-        string id PK
-        string userId FK
-        string accessToken "AES-256-GCM encrypted"
     }
 ```
 
@@ -187,8 +173,8 @@ flowchart LR
         ProdDB[("PostgreSQL<br/>Supabase Pooler<br/>aws-0-eu-west-1")]
     end
 
-    subgraph NetlifyDeploy["Netlify (Project Deploys)"]
-        NetlifyBuild["Netlify Deploy API<br/>(zip upload)"]
+    subgraph GitHubPages["GitHub Pages (Project Deploys)"]
+        GitHubPush["Git Database API<br/>(push files + enable Pages)"]
         PublishedSites["Gepubliceerde sites<br/>per project"]
     end
 
@@ -200,8 +186,8 @@ flowchart LR
     LocalCode --> LocalDB
     LocalCode --> EnvFile
     EnvFile <--> ProdDB
-    Serverless -->|project deploy| NetlifyBuild
-    NetlifyBuild --> PublishedSites
+    Serverless -->|project deploy| GitHubPush
+    GitHubPush --> PublishedSites
 ```
 
 ## 4. Auth & Multi-tenant Flow

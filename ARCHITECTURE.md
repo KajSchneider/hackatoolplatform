@@ -1,6 +1,6 @@
 # Architectuur — Hackatool
 
-> Dit document wordt bijgehouden per fase. Laatste update: Fase 7 — Project deployment naar Netlify + public deploy API.
+> Dit document wordt bijgehouden per fase. Laatste update: Fase 7 — Project deployment naar GitHub Pages + cleanup Netlify integratie.
 
 ## Stack
 
@@ -8,7 +8,7 @@
 |---|---|
 | Framework | Next.js 15 (App Router, React 19, full-stack) |
 | Taal | TypeScript (strict) |
-| Database | SQLite via Prisma (dev) — Postgres voor productie |
+| Database | SQLite via Prisma (dev) — Supabase Postgres voor productie |
 | Auth | NextAuth v5 (JWT-sessies, Credentials + optioneel GitHub OAuth) |
 | AI | Vercel AI SDK v4 (`ai`, `@ai-sdk/openai`, `@ai-sdk/anthropic`, `@ai-sdk/react`) |
 | Styling | Tailwind CSS v3, lucide-react icons |
@@ -29,8 +29,7 @@ src/
     models.ts              # ondersteunde AI-modellen + provider-mapping
     ai.ts                  # gedeelde model-resolver (custom endpoints), usage logging
     tokens.ts              # platform-token generatie (hk_*) + SHA-256 hashing
-    deployments.ts         # deployment constants, hk_deploy_* key generatie, Netlify URL-keuze
-    oauth-state.ts         # OAuth state generatie/validatie (HMAC-signed cookie) voor Netlify CSRF-bescherming
+    deployments.ts         # deployment constants, hk_deploy_* key generatie
     storage.ts             # file opslag/lezen/verwijderen op schijf
   components/              # client components (ChatLayout, EndpointManager, TokenManager, IDE, GitHubSettings, ...)
   app/
@@ -47,8 +46,7 @@ src/
         projects/[id]/     # IDE met Monaco editor, AI agent, preview
         workflows/          # workflows overzicht + aanmaken
         workflows/[id]/     # workflow details + runs
-      settings/endpoints/  # custom endpoints CRUD
-    settings/netlify/      # Netlify account koppeling (OAuth connect/disconnect)
+      settings/endpoints/  # custom endpoints CRUD (incl. Bazaarlink integratie)
     api/
       auth/[...nextauth]/  # NextAuth handlers
       register/            # account aanmaken
@@ -61,9 +59,8 @@ src/
       teams/[slug]/groups/[groupSlug]/projects/[id]/agent/  # AI agent endpoint
       teams/[slug]/groups/[groupSlug]/projects/[id]/preview/  # preview HTML generation
       teams/[slug]/groups/[groupSlug]/projects/[id]/github/  # GitHub connections CRUD
-      teams/[slug]/groups/[groupSlug]/projects/[id]/deploy/  # Netlify deploy + deployments lijst
+      teams/[slug]/groups/[groupSlug]/projects/[id]/deploy/  # GitHub Pages deploy + deployments lijst
       teams/[slug]/groups/[groupSlug]/projects/[id]/deployments/[id]/api-key/  # public API key CRUD
-      netlify/oauth/ netlify/callback/  # Netlify OAuth flow
       chat/                # interne streaming chat (sessie-auth)
       v1/chat/             # publieke REST API (Bearer-token auth)
       v1/deploy/[key]/chat/  # publieke deploy API (hk_deploy_* key auth)
@@ -103,8 +100,7 @@ User ──< Membership >── Team (Hackathon)
 - **WorkflowStep**: stap in pipeline (type: prompt/agent/tool, config als JSON, execution order)
 - **WorkflowRun**: uitvoering van workflow met status (pending/running/completed/failed), input/output, error logging
 - **AuditLog**: action tracking per user/hackathon (action, resource, resourceId, metadata)
-- **NetlifyAccount**: per-user Netlify koppeling; access token AES-256-GCM versleuteld
-- **Deployment**: Netlify deployment per project (status, url, siteId, deployId, `createdById`,
+- **Deployment**: GitHub Pages deployment per project (status, url, commitSha, `createdById`,
   optionele `publicApiKey` hash voor de publieke deploy API); max 25 per user
 
 ## Kernflows
@@ -187,11 +183,11 @@ User ──< Membership >── Team (Hackathon)
 - Creator wordt automatisch group admin
 
 ### Project Deployment (`/api/teams/[slug]/groups/[groupSlug]/projects/[id]/deploy`)
-- Vereist gekoppeld Netlify account (`/settings/netlify` → OAuth flow via `/api/netlify/oauth`)
+- Vereist gekoppelde GitHub repo (PAT-based, via GitHubSettings component in IDE)
 - Membership-check op hackathon; limiet: max 25 deployments per user (`createdById`)
-- Projectbestanden worden gezipt (JSZip) en geüpload naar de Netlify Deploy API
-- Netlify site wordt hergebruikt per project (siteId van vorige deployment), anders nieuw aangemaakt
-- Status-flow: `pending` → `deployed` (met `ssl_url`) of `failed` bij fouten
+- Projectbestanden worden gepusht naar GitHub via de Git Database API (atom commit)
+- GitHub Pages wordt ingeschakeld op de repo (public URL)
+- Status-flow: `deploying` → `deployed` (met Pages URL) of `failed` bij fouten
 - Deployment history + delete via `/t/[slug]/groups/[groupSlug]/projects/[id]/deployments`
 
 ### Publieke Deploy API (`/api/v1/deploy/[key]/chat`)
@@ -205,7 +201,6 @@ User ──< Membership >── Team (Hackathon)
 - **Custom endpoint keys**: AES-256-GCM met `ENCRYPTION_KEY` (32 bytes); nooit terug naar de client
 - **API tokens**: alleen hash in DB; volledige token eenmalig getoond bij aanmaken
 - **GitHub PATs**: AES-256-GCM versleuteld opgeslagen in `GitHubConnection`
-- **Netlify tokens**: AES-256-GCM versleuteld opgeslagen in `NetlifyAccount`
 - **Deploy API keys**: alleen SHA-256 hash in DB (`Deployment.publicApiKey`); eenmalig getoond
 - **Tenant-isolatie**: elke query/route filtert op `teamId` na membership-check (`requireMembership`)
 - **Multi-membership**: gebruikers kunnen lid zijn van meerdere hackathons en groups
@@ -215,15 +210,13 @@ User ──< Membership >── Team (Hackathon)
 - **Audit logging**: action tracking voor compliance en debugging
 - **RBAC**: admin role voor platform beheer, owner/admin/member voor hackathons/groups
 - **Top-down model**: alleen platform admins kunnen hackathons (teams) aanmaken en daar een beheerder (owner) aanwijzen; gewone users worden door admin toegevoegd aan hackathons
-- **OAuth state hardening**: Netlify OAuth flow gebruikt een HMAC-signed `state` cookie
-  ter bescherming tegen CSRF-aanvallen (`lib/oauth-state.ts`)
-- **Bekende beperkingen (nog open)**: dev-secrets in `.env`, SQLite niet geschikt voor productie-concurrency,
+- **Bekende beperkingen (nog open)**: dev-secrets in `.env`,
   geen echte sandbox-isolatie (preview draait in iframe zonder container-isolatie),
   in-memory rate limiting (Redis voor productie)
 
 ## Productie-checklist
 
-- [ ] Postgres i.p.v. SQLite (datasource provider wijzigen + migraties)
+- [x] Postgres i.p.v. SQLite (Supabase transaction pooler, poort 6543)
 - [ ] `AUTH_SECRET` en `ENCRYPTION_KEY` regenereren via secret manager
 - [ ] S3-compatible storage i.p.v. lokale schijf
 - [ ] Redis voor rate limiting (i.p.v. in-memory)
@@ -237,8 +230,7 @@ User ──< Membership >── Team (Hackathon)
   `tokens` (prefix/hash-consistentie, uniciteit), `models` (provider-mapping), `teams` (`slugify`),
   `projects` (slug generatie, GitHub repo/owner validatie), `workflows` (step types, run statuses, JSON parsing),
   `ratelimit` (request limiting, blocking, identifier separation), `rbac` (role hierarchy, access checks),
-  `deployments` (status validatie, deploy key generatie/hashing, Netlify URL-keuze),
-  `oauth-state` (state generatie, HMAC-validatie, tamper-detectie)
+  `deployments` (status validatie, deploy key generatie/hashing)
 - **Werkafspraak**: `npm test` wordt gedraaid **na elke major update** (nieuwe feature, datamodel-wijziging,
   refactor van een lib of API-route). Bij wijziging van gedrag worden de bijbehorende tests eerst
   aangepast/uitgebreid. Tests mogen niet verzwakt of verwijderd worden zonder expliciete reden.
@@ -255,7 +247,7 @@ User ──< Membership >── Team (Hackathon)
 | 4 | ✅ | Agent-pipeline-builder met runs, logging, scheduling |
 | 5 | ✅ | Admin & management, audit logging, RBAC |
 | 6 | ✅ | Data structuur refactor (Hackathon → Group → User) |
-| 7 | ✅ | Project deployment naar Netlify + public deploy API |
-| 7.1 | ✅ | Deployment hardening: oude routes opgeruimd, OAuth state CSRF-fix, tests voor oauth-state |
+| 7 | ✅ | Project deployment naar GitHub Pages + public deploy API |
+| 7.1 | ✅ | Deployment hardening: Netlify integratie verwijderd, tests opgeschoond |
 | 7.2 | ✅ | Top-down rol-model: alleen admins maken hackathons aan met beheerder |
 | Toekomst | ⏳ | Stripe billing, productie-hardening |

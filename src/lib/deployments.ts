@@ -16,11 +16,3 @@ export function generateDeployKey(): { token: string; tokenHash: string } {
   return { token: deployToken, tokenHash: hashToken(deployToken) };
 }
 
-/** Picks the best public URL from a Netlify deploy response. */
-export function pickNetlifyUrl(deployData: {
-  ssl_url?: string | null;
-  url?: string | null;
-  deploy_url?: string | null;
-}): string | null {
-  return deployData.ssl_url || deployData.url || deployData.deploy_url || null;
-}

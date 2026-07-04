@@ -2,8 +2,8 @@
 
 Deze guide beschrijft twee dingen:
 
-1. **Platform deployment** — het Hackatool platform zelf live zetten (Vercel + Postgres)
-2. **Project deployment** — hoe gebruikers hun in de IDE gebouwde projecten live zetten (Netlify)
+1. **Platform deployment** — het Hackatool platform zelf live zetten (Vercel + Supabase Postgres)
+2. **Project deployment** — hoe gebruikers hun in de IDE gebouwde projecten live zetten (GitHub Pages)
 
 ---
 
@@ -41,10 +41,9 @@ datasource db {
 | `NEXTAUTH_URL` | ✅ | Productie-URL, bijv. `https://hackatool.example.com` |
 | `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` | ⬜ | Platform-keys voor credit-gebruik |
 | `AUTH_GITHUB_ID` / `AUTH_GITHUB_SECRET` | ⬜ | GitHub OAuth login |
-| `NETLIFY_CLIENT_ID` / `NETLIFY_CLIENT_SECRET` | ⬜ | Netlify OAuth voor project deployments |
 
 > ⚠️ Als je `ENCRYPTION_KEY` wijzigt, kunnen bestaande versleutelde keys (custom endpoints,
-> GitHub PATs, Netlify tokens) niet meer ontsleuteld worden. Gebruikers moeten ze opnieuw invoeren.
+> GitHub PATs) niet meer ontsleuteld worden. Gebruikers moeten ze opnieuw invoeren.
 
 ### Productie-checklist
 
@@ -52,30 +51,23 @@ datasource db {
 - [ ] Nieuwe `AUTH_SECRET` en `ENCRYPTION_KEY` via secret manager
 - [ ] S3-compatible storage voor uploads (lokale schijf werkt niet op Vercel serverless)
 - [ ] Redis voor rate limiting (in-memory werkt niet over meerdere serverless instances)
-- [ ] OAuth redirect URLs bijwerken (GitHub + Netlify) naar de productie-URL
+- [ ] OAuth redirect URLs bijwerken (GitHub) naar de productie-URL
 
 ---
 
-## 2. Project deployment (Netlify) — voor gebruikers
+## 2. Project deployment (GitHub Pages) — voor gebruikers
 
-Gebruikers kunnen hun IDE-projecten met één klik live zetten naar Netlify.
+Gebruikers kunnen hun IDE-projecten met één klik live zetten naar GitHub Pages.
 
-### Eenmalig: Netlify OAuth app (platform beheerder)
+### Voor gebruikers: repo koppelen & deployen
 
-1. Ga naar [Netlify OAuth applications](https://app.netlify.com/user/applications)
-2. Maak een nieuwe OAuth app aan
-3. Redirect URI: `https://<jouw-domein>/api/netlify/callback` (dev: `http://localhost:3000/api/netlify/callback`)
-4. Zet `NETLIFY_CLIENT_ID` en `NETLIFY_CLIENT_SECRET` in de environment
+1. Open een project in de IDE en klik **GitHub koppelen** in de header
+2. Vul owner, repo name, branch en een GitHub Personal Access Token (PAT) in
+3. Klik **Deploy** — projectbestanden worden naar de repo gepusht en GitHub Pages ingeschakeld
+4. Na de deploy verschijnt de public URL (**View Live**)
+5. Bekijk de geschiedenis via de **Deployments** link
 
-### Voor gebruikers: account koppelen & deployen
-
-1. Ga naar **Settings → Netlify** (`/settings/netlify`) en klik **Koppel Netlify Account**
-2. Open een project in de IDE en klik **Deploy** in de header
-3. Na de deploy verschijnt de public URL (**View Live**)
-4. Bekijk de geschiedenis via de **Deployments** link
-
-**Limiet:** max 25 deployments per gebruiker. Netlify sites worden per project hergebruikt,
-dus opnieuw deployen update dezelfde URL.
+**Limiet:** max 25 deployments per gebruiker. Opnieuw deployen update dezelfde repo/branch.
 
 ### Public API key (optioneel)
 

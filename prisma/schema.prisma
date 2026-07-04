@@ -17,7 +17,6 @@ model User {
   memberships   Membership[]
   groupMemberships GroupMembership[]
   conversations Conversation[]
-  netlifyAccount NetlifyAccount?
   deployments   Deployment[]
 }
 
@@ -318,24 +317,13 @@ model CustomEndpoint {
   team        Team       @relation(fields: [teamId], references: [id], onDelete: Cascade)
 }
 
-model NetlifyAccount {
-  id          String   @id @default(cuid())
-  userId      String   @unique
-  accessToken String   // encrypted Netlify access token
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
 model Deployment {
   id          String   @id @default(cuid())
   projectId   String
   createdById String
-  provider    String   @default("netlify")
+  provider    String   @default("github")
   status      String   @default("pending") // pending, deploying, deployed, failed
-  url         String?  // public URL
-  siteId      String?  // Netlify site ID for this project deployment
-  deployId    String?  // Netlify deployment ID
+  url         String?  // public URL (GitHub Pages)
   commitSha   String?  // Git commit SHA for GitHub-based deploys
   publicApiKey String? @unique // optional public API key hash for this deployment
   createdAt   DateTime @default(now())
