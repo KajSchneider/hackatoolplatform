@@ -15,7 +15,7 @@ export async function POST(
   if (!team) return NextResponse.json({ error: "Team niet gevonden" }, { status: 404 });
 
   const session = await requireMembership(team.id);
-  if (session instanceof NextResponse) return session;
+  if (session instanceof Response) return session;
 
   const body = await req.json().catch(() => ({}));
   const agentName = body.name || `hackatool-${team.slug}`;
@@ -25,12 +25,14 @@ export async function POST(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: agentName }),
+      signal: AbortSignal.timeout(15000),
     });
 
     if (!regRes.ok) {
-      const err = await regRes.text();
+      const err = await regRes.text().catch(() => "(geen body)");
+      console.error("Bazaarlink registratie faalde:", regRes.status, err);
       return NextResponse.json(
-        { error: `Bazaarlink registratie mislukt: ${err}` },
+        { error: `Bazaarlink registratie mislukt (HTTP ${regRes.status}): ${err}` },
         { status: 502 }
       );
     }
@@ -70,10 +72,10 @@ export async function POST(
       },
       { status: 201 }
     );
-  } catch (error) {
-    console.error("Bazaarlink register error:", error);
+  } catch (error: any) {
+    console.error("Bazaarlink register error:", error?.name, error?.message, error?.cause);
     return NextResponse.json(
-      { error: "Kon niet verbinden met Bazaarlink" },
+      { error: `Kon niet verbinden met Bazaarlink: ${error?.message || "onbekende fout"}` },
       { status: 500 }
     );
   }

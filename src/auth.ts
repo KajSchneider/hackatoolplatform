@@ -56,8 +56,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (account?.provider === "github" && user.email) {
         const existing = await prisma.user.findUnique({ where: { email: user.email.toLowerCase() } });
         if (!existing) {
+          // De eerste gebruiker wordt automatisch platform admin.
+          const userCount = await prisma.user.count();
           const created = await prisma.user.create({
-            data: { email: user.email.toLowerCase(), name: user.name },
+            data: {
+              email: user.email.toLowerCase(),
+              name: user.name,
+              role: userCount === 0 ? "admin" : "user",
+            },
           });
           user.id = created.id;
         } else {

@@ -21,8 +21,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "E-mailadres is al in gebruik" }, { status: 409 });
   }
   const passwordHash = await bcrypt.hash(password, 10);
+  // De eerste geregistreerde gebruiker wordt automatisch platform admin.
+  const userCount = await prisma.user.count();
   await prisma.user.create({
-    data: { name, email: email.toLowerCase(), passwordHash },
+    data: {
+      name,
+      email: email.toLowerCase(),
+      passwordHash,
+      role: userCount === 0 ? "admin" : "user",
+    },
   });
   return NextResponse.json({ ok: true }, { status: 201 });
 }
