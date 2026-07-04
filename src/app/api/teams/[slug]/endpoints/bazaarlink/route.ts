@@ -23,7 +23,11 @@ export async function POST(
   try {
     const regRes = await fetch(BAZAARLINK_REGISTER_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+        "Accept": "application/json",
+      },
       body: JSON.stringify({ name: agentName }),
       signal: AbortSignal.timeout(15000),
     });
